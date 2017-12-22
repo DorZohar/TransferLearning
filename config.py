@@ -5,12 +5,13 @@ defualt_items = {
     'w2v_path': "C:\\Wiki\\wiki.word2vec.bin",
     'wiki_path': 'C:\\Wiki\\wiki.corpus',
     'tfidf_path': 'C:\\Wiki\\wiki.tfidf.model',
-    'corpus__data_file': 'C:\\Wiki\\lm_input.txt',
-    'corpus__dict_file': 'C:\\Wiki\\lm_dict.txt',
-    'lm__train_file': 'C:\\Wiki\\lm_input_train.txt',
-    'lm__test_file': 'C:\\Wiki\\lm_input_test.txt',
-    'lm__valid_file': 'C:\\Wiki\\lm_input_validation.txt',
-    'lm__model_paths': 'LM_Models\\model_{epoch:02d}_{val_loss:.2f}.hdf5',
+    'lm_corpus': 'Brown',
+    'corpus__data_file': 'lm_input.txt',
+    'corpus__dict_file': 'lm_dict.txt',
+    'lm__train_file': 'lm_input_train.txt',
+    'lm__test_file': 'lm_input_test.txt',
+    'lm__valid_file': 'lm_input_validation.txt',
+    'lm__model_paths': 'LM_Models/model_{epoch:02d}_{val_loss:.2f}.hdf5',
 
 #################################
 # Language Model                #

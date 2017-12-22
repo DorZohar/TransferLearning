@@ -19,12 +19,12 @@ class LanguageModel:
         self.build_model()
         np.random.seed(self.conf['seed'])
 
-        self.train_gen = common.wiki_generator(cfg['lm__train_file'],
+        self.train_gen = common.wiki_generator("LM_corpura/%s/%s" % (cfg['lm_corpus'], cfg['lm__train_file']),
                                                len(self.vocab) + 1,
                                                cfg['lm__batch_size'],
                                                cfg['lm__max_sentence_len'])
 
-        self.valid_gen = common.wiki_generator(cfg['lm__valid_file'],
+        self.valid_gen = common.wiki_generator("LM_corpura/%s/%s" % (cfg['lm_corpus'], cfg['lm__valid_file']),
                                                len(self.vocab) + 1,
                                                cfg['lm__batch_size'],
                                                cfg['lm__max_sentence_len'])
