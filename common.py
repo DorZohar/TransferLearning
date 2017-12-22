@@ -85,33 +85,33 @@ def wiki_generator(file_path, max_idx, batch_size, max_len, is_test=False):
 
     batch_sentences = []
     i = 0
+    while True:
+        with open(file_path, 'r') as file:
+            for line in file:
+                line = line.strip('\n').split(' ')
+                line = [int(word_id) for word_id in line]
+                pos = 0
+                while pos < len(line):
+                    sentence = line[pos:pos+max_len]
+                    batch_sentences.append(sentence)
+                    i += 1
+                    pos += max_len
+                    if i >= batch_size:
 
-    with open(file_path, 'r') as file:
-        for line in file:
-            line = line.strip('\n').split(' ')
-            line = [int(word_id) for word_id in line]
-            pos = 0
-            while pos < len(line):
-                sentence = line[pos:pos+max_len]
-                batch_sentences.append(sentence)
-                i += 1
-                pos += max_len
-                if i >= batch_size:
+                        sequences = keras.preprocessing.sequence.pad_sequences(batch_sentences,
+                                                                              maxlen=max_len,
+                                                                              padding='pre',
+                                                                              truncating='post',
+                                                                              )
 
-                    sequences = keras.preprocessing.sequence.pad_sequences(batch_sentences,
-                                                                          maxlen=max_len,
-                                                                          padding='pre',
-                                                                          truncating='post',
-                                                                          )
+                        targets = np.expand_dims(sequences, axis=-1)
 
-                    targets = np.expand_dims(sequences, axis=-1)
-
-                    if is_test:
-                        yield {'Input': sequences}
-                    else:
-                        yield {'Input': sequences}, targets
-                    i = 0
-                    batch_sentences = []
+                        if is_test:
+                            yield {'Input': sequences}
+                        else:
+                            yield {'Input': sequences}, targets
+                        i = 0
+                        batch_sentences = []
 
 
 def preprocessWiki(wiki, word_dictionary, max_idx, output):
