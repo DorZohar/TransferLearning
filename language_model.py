@@ -12,7 +12,7 @@ class LanguageModel:
 
     def __init__(self, conf, w2v):
         self.vectors = w2v
-        self.vocab = pkl.load(open(conf['corpus__dict_file'], 'rb'))
+        self.vocab = pkl.load(open("LM_corpura/%s/%s" % (cfg['lm_corpus'], conf['corpus__dict_file']), 'rb'))
         self.model = None
         self.conf = conf
         self.stacked_layer_names = []
