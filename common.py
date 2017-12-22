@@ -11,7 +11,7 @@ import time
 
 
 def perplexity(y_true, y_pred):
-    return K.pow(K.constant(2.0), K.sparse_categorical_crossentropy(y_true, y_pred))
+    return K.pow(K.constant(2.0), K.mean(K.sparse_categorical_crossentropy(y_true, y_pred)))
 
 
 # class SampledSoftmax(keras.layers.Layer):
@@ -84,9 +84,7 @@ def threadsafe_generator(f):
 def wiki_generator(file_path, max_idx, batch_size, max_len, is_test=False):
 
     batch_sentences = []
-    targets = []
     i = 0
-    t = time.time()
 
     with open(file_path, 'r') as file:
         for line in file:
@@ -107,7 +105,6 @@ def wiki_generator(file_path, max_idx, batch_size, max_len, is_test=False):
                                                                           )
 
                     targets = np.expand_dims(sequences, axis=-1)
-                    print(time.time() - t)
 
                     if is_test:
                         yield {'Input': sequences}
@@ -115,7 +112,6 @@ def wiki_generator(file_path, max_idx, batch_size, max_len, is_test=False):
                         yield {'Input': sequences}, targets
                     i = 0
                     batch_sentences = []
-                    t = time.time()
 
 
 def preprocessWiki(wiki, word_dictionary, max_idx, output):

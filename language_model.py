@@ -111,8 +111,6 @@ class LanguageModel:
                                           activation='linear',
                                           name="OutputLayer")(cur_layer)
 
-        print(output_layer)
-
         outputs.append(output_layer)
         losses.append(keras.losses.sparse_categorical_crossentropy)
         metrics.append(common.perplexity)
