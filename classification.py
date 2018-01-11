@@ -8,7 +8,8 @@ import numpy as np
 from sklearn.svm import SVC
 from sklearn.model_selection import train_test_split
 from nltk.corpus import treebank
-from task import *
+from constants import *
+from task import Task
 
 class Classifier:
 
@@ -70,7 +71,7 @@ class Classifier:
 
         if self.task.type == TASK_TYPE__SEQUENCE_TAGGING:
             self.model.compile(loss="crossentropy_loss",
-                               metrics=["accuracy"],
+                               metrics=[common.sequence_accuracy],
                                optimizer=keras.optimizers.RMSprop(lr=self.conf['cl_struct__learn_rate']),
                                sample_weight_mode="temporal",
                                )

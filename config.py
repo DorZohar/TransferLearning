@@ -1,5 +1,5 @@
 import pickle
-from task import *
+from constants import *
 
 defualt_items = {
 # File location parameters
@@ -43,6 +43,7 @@ defualt_items = {
     'cl__test_steps': 100,
     'cl__batch_size': 200,
     'cl__epochs': 10,
+    'cl__max_sentence_len': 40,
 
 
 # Classifier's tasks

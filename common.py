@@ -8,6 +8,7 @@ import os
 import re
 import tensorflow as tf
 import time
+from constants import *
 
 def sequential_sparse_categorical_crossentropy(y_true, y_pred):
     #
