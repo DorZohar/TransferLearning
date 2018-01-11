@@ -9,9 +9,26 @@ import re
 import tensorflow as tf
 import time
 
+def sequential_sparse_categorical_crossentropy(y_true, y_pred):
+    #
+    # y_true = K.flatten(y_true)
+    # y_pred = K.flatten(y_pred)
+    #
+    # non_zeros = K.cast(K.not_equal(y_true, K.constant(0)), tf.bool)
+    # indices = tf.where(non_zeros)
+    #
+    # y_true = K.expand_dims(K.expand_dims(K.gather(y_true, indices), -1), 0)
+    # y_pred = K.expand_dims(K.expand_dims(K.gather(y_pred, indices), -1), 0)
+
+    return K.sparse_categorical_crossentropy(y_true, y_pred)
+
 
 def perplexity(y_true, y_pred):
-    return K.pow(K.constant(2.0), K.mean(K.sparse_categorical_crossentropy(y_true, y_pred)))
+    return K.pow(K.constant(2.0), K.mean(sequential_sparse_categorical_crossentropy(y_true, y_pred)))
+
+
+def zero_loss(y_true, y_pred):
+    return K.zeros_like(y_pred)
 
 
 # class SampledSoftmax(keras.layers.Layer):
@@ -45,8 +62,9 @@ def perplexity(y_true, y_pred):
 
 
 def sequence_accuracy(y_true, y_pred):
-    true_labels = (K.not_equal(y_true, K.constant(0)))
-    return K.mean(K.equal(y_true[true_labels], y_pred[true_labels]))
+    non_zeros = (K.not_equal(y_true, K.constant(0)))
+    true_positions = K.any(non_zeros, axis=1)
+    return K.mean(K.equal(y_true[true_positions], y_pred[true_positions]))
 
 
 def get_file_with_suffixes(file, suffixes):
@@ -105,11 +123,13 @@ def wiki_generator(file_path, max_idx, batch_size, max_len, is_test=False):
                                                                               )
 
                         targets = np.expand_dims(sequences, axis=-1)
+                        weights = np.not_equal(sequences, 0).astype(np.float32)
+                        #weights = weights / np.expand_dims(np.sum(weights, axis=1), 1)
 
                         if is_test:
                             yield {'Input': sequences}
                         else:
-                            yield {'Input': sequences}, targets
+                            yield {'Input': sequences}, targets, weights
                         i = 0
                         batch_sentences = []
 
@@ -207,8 +227,6 @@ def split_dataset(file, train_fraction, test_fraction, randomize=False):
         print("\tMin line length: %d" % min(line_lengths))
         print("\tMax line length: %d" % max(line_lengths))
     return
-
-
 
 
 if __name__ == '__main__':

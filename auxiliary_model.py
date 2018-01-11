@@ -8,26 +8,30 @@ import keras.backend as K
 import pickle as pkl
 
 
-class LanguageModel:
+class AuxiliaryModel:
 
-    def __init__(self, conf, w2v):
+    def __init__(self, conf, w2v=None, path=None):
         self.vectors = w2v
-        self.vocab = pkl.load(open("LM_corpura/%s/%s" % (cfg['lm_corpus'], conf['corpus__dict_file']), 'rb'))
+        self.vocab = pkl.load(open("LM_corpura/%s/%s" % (conf['lm_corpus'], conf['corpus__dict_file']), 'rb'))
         self.model = None
         self.conf = conf
         self.stacked_layer_names = []
         self.build_model()
         np.random.seed(self.conf['seed'])
 
-        self.train_gen = common.wiki_generator("LM_corpura/%s/%s" % (cfg['lm_corpus'], cfg['lm__train_file']),
-                                               len(self.vocab) + 1,
-                                               cfg['lm__batch_size'],
-                                               cfg['lm__max_sentence_len'])
+        if path is None:
+            self.train_gen = common.wiki_generator("LM_corpura/%s/%s" % (self.conf['lm_corpus'], self.conf['lm__train_file']),
+                                                   len(self.vocab) + 1,
+                                                   self.conf['lm__batch_size'],
+                                                   self.conf['lm__max_sentence_len'])
 
-        self.valid_gen = common.wiki_generator("LM_corpura/%s/%s" % (cfg['lm_corpus'], cfg['lm__valid_file']),
-                                               len(self.vocab) + 1,
-                                               cfg['lm__batch_size'],
-                                               cfg['lm__max_sentence_len'])
+            self.valid_gen = common.wiki_generator("LM_corpura/%s/%s" % (self.conf['lm_corpus'], self.conf['lm__valid_file']),
+                                                   len(self.vocab) + 1,
+                                                   self.conf['lm__batch_size'],
+                                                   self.conf['lm__max_sentence_len'])
+
+        else:
+            self.load_from_file(path)
 
     def create_stacked_model(self, input_layer):
 
@@ -38,7 +42,6 @@ class LanguageModel:
                                                  output_dim=self.vectors.syn0.shape[1],
                                                  weights=[embedding_matrix],
                                                  name='EmbeddingLayer',
-                                                 trainable=True,
                                                  )(input_layer)
         self.stacked_layer_names.append('EmbeddingLayer')
 
@@ -65,7 +68,8 @@ class LanguageModel:
             cur_fwd_layer = next_fwd_layer(cur_fwd_layer)
             cur_bck_layer = next_bck_layer(cur_bck_layer)
 
-            self.stacked_layer_names.append("Recurrent%d" % layer)
+            self.stacked_layer_names.append("RecurrentFwd%d" % layer)
+            self.stacked_layer_names.append("RecurrentBck%d" % layer)
 
         return cur_fwd_layer, cur_bck_layer
 
@@ -108,11 +112,11 @@ class LanguageModel:
 
         # Final softmax layer for word classification
         output_layer = keras.layers.Dense(units=len(self.vocab) + 1,
-                                          activation='linear',
+                                          activation='softmax',
                                           name="OutputLayer")(cur_layer)
 
         outputs.append(output_layer)
-        losses.append(keras.losses.sparse_categorical_crossentropy)
+        losses.append(common.sequential_sparse_categorical_crossentropy)
         metrics.append(common.perplexity)
 
         self.model = keras.models.Model(inputs=input_layer,
@@ -122,14 +126,13 @@ class LanguageModel:
         # Compile the model
         self.model.compile(loss=losses,
                            metrics=metrics,
-                           optimizer=keras.optimizers.RMSprop(),
+                           optimizer=keras.optimizers.RMSprop(lr=self.conf['lm__learn_rate']),
+                           sample_weight_mode="temporal",
                            )
 
         return
 
     def train(self):
-
-        # TODO: Steps don't count number of examples but number of lines
 
         checkpoint = keras.callbacks.ModelCheckpoint(self.conf['lm__model_paths'],
                                                      save_best_only=True,
@@ -161,13 +164,12 @@ class LanguageModel:
 
         return predictions
 
-    def load_from_file(self):
-        pass
+    def load_from_file(self, path):
+        keras.metrics.perplexity = common.perplexity
+        self.model = keras.models.load_model(path)
 
-    def get_hidden_layers(self):
+    def get_hidden_layers(self, input_layer, trainable=False):
 
-        input_layer = keras.layers.Input(shape=(None, self.vectors.vector_size),
-                                         name='Input')
         cur_fwd_layer, cur_bck_layer = self.create_stacked_model(input_layer)
         output = keras.layers.Concatenate()([cur_fwd_layer, cur_bck_layer])
 
@@ -175,6 +177,7 @@ class LanguageModel:
 
         for layer_name in self.stacked_layer_names:
             new_model.get_layer(name=layer_name).set_weights(self.model.get_layer(layer_name).get_weights())
+            new_model.get_layer(name=layer_name).trainable = trainable
 
         return new_model
 
@@ -185,6 +188,5 @@ if __name__ == '__main__':
     w2v = KeyedVectors.load_word2vec_format(cfg['w2v_path'], binary=True)
     #wiki = WikiCorpus.load(cfg['wiki_path'])
 
-
-    lm = LanguageModel(cfg, w2v)
+    lm = AuxiliaryModel(cfg, w2v)
     lm.train()
