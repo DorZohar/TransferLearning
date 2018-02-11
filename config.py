@@ -6,6 +6,7 @@ defualt_items = {
     'w2v_path': "C:\\Wiki\\wiki.word2vec.bin",
     'wiki_path': 'C:\\Wiki\\wiki.corpus',
     'tfidf_path': 'C:\\Wiki\\wiki.tfidf.model',
+    'index2word_path': 'index2word.pkl',
     'lm_corpus': 'Brown',
     'corpus__data_file': 'lm_input.txt',
     'corpus__dict_file': 'lm_dict.txt',
@@ -38,11 +39,11 @@ defualt_items = {
 # Classifier                    #
 #################################
 
-    'cl__steps': 1000,
-    'cl__validation_steps': 100,
-    'cl__test_steps': 100,
-    'cl__batch_size': 200,
-    'cl__epochs': 10,
+    'cl__steps': 5000,
+    'cl__validation_steps': 500,
+    'cl__test_steps': 500,
+    'cl__batch_size': 100,
+    'cl__epochs': 20,
     'cl__max_sentence_len': 40,
 
 
@@ -51,7 +52,8 @@ defualt_items = {
                        'chunking',
                        'ner',
                        'sentiment_analysis'],
-    'cl_task__classes': [],
+    'cl_task__classes': [46 + 1,
+                         ],
     'cl_task__type': [TASK_TYPE__SEQUENCE_TAGGING,
                       TASK_TYPE__SEQUENCE_TAGGING,
                       TASK_TYPE__SEQUENCE_TAGGING,
@@ -67,8 +69,8 @@ defualt_items = {
     'cl_struct__bidirectional': True,
     'cl_struct__lm_class': 'Brown',
     'cl_struct__lm_file': 'model_10_4.04.hdf5',
-    'cl_struct__lstm_sizes': [40],
-    'cl_struct__dense_sizes': [150, 150],
+    'cl_struct__lstm_sizes': [],
+    'cl_struct__dense_sizes': [300],
     'cl_struct__rec_dropout': 0.1,
     'cl_struct__input_dropout': 0.2,
     'cl_struct__dense_dropout': 0.3,
@@ -84,8 +86,8 @@ defualt_items = {
 # Corpus                        #
 #################################
     'corpus__min_word_freq': 3,
-    'corpus__train_fraction': 0.7,
-    'corpus__test_fraction': 0.15,
+    'corpus__validation_fraction': 0.2,
+    'corpus__test_fraction': 0.2,
 
 }
 

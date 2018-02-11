@@ -113,7 +113,7 @@ class AuxiliaryModel:
         # Final softmax layer for word classification
         output_layer = keras.layers.Dense(units=len(self.vocab) + 1,
                                           activation='softmax',
-                                          name="OutputLayer")(cur_layer)
+                                          name="LMObjective")(cur_layer)
 
         outputs.append(output_layer)
         losses.append(common.sequential_sparse_categorical_crossentropy)

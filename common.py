@@ -73,6 +73,11 @@ def get_file_with_suffixes(file, suffixes):
     return ["%s_%s%s" % (base, suffix, ext) for suffix in suffixes]
 
 
+def get_word_dict(path):
+    index_to_word = pkl.load(open(path, 'rb'))
+    return {word: index for index, word in index_to_word.items()}
+
+
 class threadsafe_iter:
     """Takes an iterator/generator and makes it thread-safe by
     serializing call to the `next` method of given iterator/generator.

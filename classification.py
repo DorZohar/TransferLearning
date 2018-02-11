@@ -14,6 +14,7 @@ from task import Task
 class Classifier:
 
     def __init__(self, cfg):
+        self.task = Task(cfg)
         lm_path = "LM_Models/%s/%s" % (cfg['cl_struct__lm_class'], cfg['cl_struct__lm_file'])
         w2v = KeyedVectors.load_word2vec_format(cfg['w2v_path'], binary=True)
         self.lm = AuxiliaryModel(cfg, w2v, path=lm_path)
@@ -21,7 +22,6 @@ class Classifier:
         self.word_dict = dict([(word, key) for key, word in enumerate(self.words, 1)])
         self.model = None
         self.conf = cfg
-        self.task = Task(cfg)
 
     def build_model(self):
 
@@ -30,11 +30,12 @@ class Classifier:
 
         auxiliary_output = self.lm.get_hidden_layers(input_layer, trainable=self.conf['cl_struct__trainable'])
 
-        cur_layer = auxiliary_output
+        cur_layer = auxiliary_output.output
         return_sequences = True
 
         for layer, layer_size in enumerate(self.conf['cl_struct__lstm_sizes']):
-            if layer == len(self.conf['cl_struct__lstm_sizes']) - 1 and not self.conf['cl_struct__attention']:
+            if layer == len(self.conf['cl_struct__lstm_sizes']) - 1 and \
+               not self.conf['cl_struct__attention'] and self.task.type != TASK_TYPE__SEQUENCE_TAGGING:
                 return_sequences = False
             next_layer = keras.layers.LSTM(layer_size,
                                            activation=self.conf['cl_struct__activation'],
@@ -63,28 +64,33 @@ class Classifier:
                                              )(cur_layer)
 
         # Final softmax layer for word classification
-        output_layer = keras.layers.Dense(units=self.task,
+        output_layer = keras.layers.Dense(units=self.task.num_classes,
                                           activation='softmax',
                                           name="OutputLayer")(cur_layer)
 
         self.model = keras.models.Model(input_layer, output_layer)
 
         if self.task.type == TASK_TYPE__SEQUENCE_TAGGING:
-            self.model.compile(loss="crossentropy_loss",
-                               metrics=[common.sequence_accuracy],
+            self.model.compile(loss="categorical_crossentropy",
+                               metrics=["accuracy"], #[common.sequence_accuracy],
                                optimizer=keras.optimizers.RMSprop(lr=self.conf['cl_struct__learn_rate']),
                                sample_weight_mode="temporal",
                                )
         else:
-            self.model.compile(loss="crossentropy_loss",
+            self.model.compile(loss="categorical_crossentropy",
                                metrics=["accuracy"],
                                optimizer=keras.optimizers.RMSprop(lr=self.conf['cl_struct__learn_rate']),
                                )
 
-    def train(self, train_gen, valid_gen):
+    def train(self):
+
+        train_gen = self.task.generator(False, GENERATOR__TRAIN, self.conf['cl__steps'])
+        valid_gen = self.task.generator(False, GENERATOR__VALIDATION, self.conf['cl__validation_steps'])
+
         checkpoint = keras.callbacks.ModelCheckpoint(self.task.get_model_path(),
                                                      save_best_only=True,
                                                      mode='min',
+                                                     monitor='val_loss',
                                                      verbose=self.conf['verbose'])
 
         self.model.fit_generator(train_gen,
@@ -97,6 +103,10 @@ class Classifier:
                                  verbose=1)
 
     def test(self, test_gen):
+
+        sum = 0
+        
+
         scores = self.model.evalute_generator(test_gen,
                                               steps_per_epoch=self.conf['cl__test_steps'],
                                               verbose=self.conf['verbose'])
@@ -141,6 +151,9 @@ class Classifier:
 if __name__ == '__main__':
     cfg = Config()
     c = Classifier(cfg)
-    c.read_data(treebank.tagged_sents())
+    c.build_model()
+    c.train()
+
+    #c.read_data(treebank.tagged_sents())
 
 
